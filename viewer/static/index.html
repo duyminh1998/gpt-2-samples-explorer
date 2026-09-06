@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPT-2 Output Explorer</title>
+<link rel="stylesheet" href="style.css?v={{V}}">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>📖</text></svg>">
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <div class="brand">GPT-2 Output Explorer <small id="corpusSize"></small></div>
+    <div class="tabs" role="tablist">
+      <button id="tabRead" role="tab" aria-selected="true">Read</button>
+      <button id="tabAnalytics" role="tab" aria-selected="false">Analytics</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="btnRandom" title="Jump to a random sample (r)">Random</button>
+    <button class="icon-btn" id="btnBookmarks" title="Show bookmarked samples (b)">★ <span id="bmCount">0</span></button>
+    <button class="icon-btn" id="btnTheme" title="Cycle theme (t)">Dark</button>
+    <button class="icon-btn" id="btnSettings" title="Reading settings">Aa</button>
+    <button class="icon-btn" id="btnHelp" title="Keyboard shortcuts (?)">?</button>
+  </header>
+
+  <div class="main" data-view="read" id="main">
+
+    <aside class="sidebar" id="sidebar">
+      <div class="side-head">
+        <div class="search-row">
+          <input type="search" id="q" placeholder="Search all samples…  (press /)" autocomplete="off" spellcheck="false">
+          <button class="icon-btn" id="btnSearch">Go</button>
+        </div>
+        <div class="filter-row">
+          <select id="dsSelect" title="Which dataset to browse / search"></select>
+          <select id="mode" title="How to interpret the query">
+            <option value="all">all words</option>
+            <option value="any">any word</option>
+            <option value="phrase">exact phrase</option>
+            <option value="raw">FTS5 syntax</option>
+          </select>
+          <select id="sort" title="Ordering when browsing">
+            <option value="index">in order</option>
+            <option value="longest">longest first</option>
+            <option value="shortest">shortest first</option>
+          </select>
+        </div>
+      </div>
+      <div class="side-status" id="sideStatus"><span>Loading…</span></div>
+      <div class="list" id="list"></div>
+      <div class="pager" id="pager" hidden>
+        <button class="icon-btn" id="prevPage">‹ Prev</button>
+        <div class="spacer"></div>
+        <span id="pageInfo" style="color:var(--text-muted);font-size:12px"></span>
+        <div class="spacer"></div>
+        <button class="icon-btn" id="nextPage">Next ›</button>
+      </div>
+    </aside>
+    <div class="resizer" id="resizer"></div>
+
+    <section class="reader-wrap">
+      <div class="reader-bar">
+        <button class="icon-btn" id="btnToggleSidebar" title="Toggle the list (\)">☰</button>
+        <button class="icon-btn" id="btnPrevDoc" title="Previous sample (k / ←)">↑</button>
+        <button class="icon-btn" id="btnNextDoc" title="Next sample (j / →)">↓</button>
+        <span class="meta" id="docMeta"></span>
+        <div class="spacer"></div>
+        <span id="matchNav" hidden>
+          <button class="icon-btn" id="prevMatch" title="Previous match (N)">↑</button>
+          <span id="matchInfo" style="margin:0 6px"></span>
+          <button class="icon-btn" id="nextMatch" title="Next match (n)">↓</button>
+        </span>
+        <button class="icon-btn" id="btnStar" title="Bookmark this sample (s)">☆ Save</button>
+        <button class="icon-btn" id="btnCopy" title="Copy the sample text">Copy</button>
+      </div>
+      <div class="reader" id="reader">
+        <div class="empty">Pick a sample from the list, or press <kbd>r</kbd> for a random one.</div>
+      </div>
+    </section>
+
+    <section class="analytics-wrap" id="analyticsWrap">
+      <div class="loading">Loading analytics…</div>
+    </section>
+  </div>
+</div>
+
+<div class="settings" id="settingsPanel" hidden>
+  <h3>Reading</h3>
+  <div class="set-row"><span>Typeface</span>
+    <div class="seg" id="setFont">
+      <button data-v="serif" aria-pressed="true">Serif</button>
+      <button data-v="sans" aria-pressed="false">Sans</button>
+      <button data-v="mono" aria-pressed="false">Mono</button>
+    </div>
+  </div>
+  <div class="set-row"><span>Size <b id="vSize"></b></span><input type="range" id="setSize" min="14" max="30" step="1"></div>
+  <div class="set-row"><span>Line height <b id="vLh"></b></span><input type="range" id="setLh" min="1.3" max="2.2" step="0.05"></div>
+  <div class="set-row"><span>Width <b id="vMeasure"></b></span><input type="range" id="setMeasure" min="45" max="110" step="1"></div>
+  <div class="set-row"><span>Tracking <b id="vLs"></b></span><input type="range" id="setLs" min="-0.01" max="0.06" step="0.005"></div>
+  <div class="set-row"><span>Theme</span>
+    <div class="seg" id="setTheme">
+      <button data-v="dark" aria-pressed="true">Dark</button>
+      <button data-v="sepia" aria-pressed="false">Sepia</button>
+      <button data-v="light" aria-pressed="false">Light</button>
+    </div>
+  </div>
+  <div class="set-row" style="margin-bottom:0"><button class="icon-btn" id="setReset">Reset to defaults</button></div>
+</div>
+
+<div class="settings" id="helpPanel" hidden style="width:320px">
+  <h3>Keyboard</h3>
+  <table style="font-size:12.5px;line-height:1.9;color:var(--text-secondary)">
+    <tr><td><kbd>j</kbd> / <kbd>k</kbd></td><td>next / previous sample</td></tr>
+    <tr><td><kbd>n</kbd> / <kbd>N</kbd></td><td>next / previous search match</td></tr>
+    <tr><td><kbd>/</kbd></td><td>focus the search box</td></tr>
+    <tr><td><kbd>r</kbd></td><td>random sample</td></tr>
+    <tr><td><kbd>s</kbd></td><td>bookmark this sample</td></tr>
+    <tr><td><kbd>b</kbd></td><td>show bookmarks</td></tr>
+    <tr><td><kbd>t</kbd></td><td>cycle theme</td></tr>
+    <tr><td><kbd>-</kbd> / <kbd>=</kbd></td><td>text smaller / larger</td></tr>
+    <tr><td><kbd>\</kbd></td><td>toggle the list pane</td></tr>
+    <tr><td><kbd>g</kbd></td><td>go to sample index…</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>close panels</td></tr>
+  </table>
+</div>
+
+<div class="tooltip" id="tooltip" hidden></div>
+
+<script src="analytics.js?v={{V}}"></script>
+<script src="app.js?v={{V}}"></script>
+</body>
+</html>
