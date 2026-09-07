@@ -69,7 +69,8 @@ function kindOf(ds) {
 /* ------------------------------------------------------------------ prefs */
 function loadPrefs() {
   return Object.assign(
-    { font: 'serif', size: 19, lh: 1.7, measure: 70, ls: 0, theme: 'dark', sidebar: 400 },
+    { font: 'serif', size: 19, lh: 1.7, measure: 70, ls: 0, theme: 'dark', sidebar: 400,
+      blocks: true },
     loadJSON('gpt2x.prefs', {}));
 }
 
@@ -219,6 +220,7 @@ function renderDoc() {
   const reader = $('reader');
   if (!d) { reader.innerHTML = '<div class="empty">Nothing loaded.</div>'; return; }
   const ds = d.dataset, k = kindOf(ds);
+  const shaped = Markup.render(d, queryTerms(), prefs.blocks);
   const starred = bookmarks.includes(d.id);
   $('btnStar').textContent = starred ? '★ Saved' : '☆ Save';
   $('btnStar').classList.toggle('active', starred);
@@ -235,11 +237,15 @@ function renderDoc() {
         <span>${fmt(d.n_chars)} chars</span>
         <span>${d.ended ? 'ended naturally' : 'truncated at length limit'}</span>
         ${d.orig_id !== null ? `<span>id ${fmt(d.orig_id)}</span>` : ''}
+        ${shaped.regions ? `<span class="badge mk-badge" title="${
+          shaped.regions} stretch(es) of this sample are dense in tags. The scrape flattened their line breaks; Blocks puts them back with CSS, without changing a character.">${
+          fmt(shaped.regions)} markup block${shaped.regions === 1 ? '' : 's'}</span>` : ''}
       </div>
       <hr>
     </div>
-    <article class="doc" id="docBody">${Anno.body(d, queryTerms())}</article>`;
+    <article class="doc" id="docBody">${shaped.html}</article>`;
 
+  showBlockState(shaped.regions);
   state.matches = [...reader.querySelectorAll('.doc mark')];
   state.matchIdx = -1;
   $('matchNav').hidden = state.matches.length === 0;
@@ -261,7 +267,9 @@ function redrawDoc() {
   const reader = $('reader');
   const top = reader.scrollTop;
   const at = state.matchIdx;
-  body.innerHTML = Anno.body(state.doc, queryTerms());
+  const shaped = Markup.render(state.doc, queryTerms(), prefs.blocks);
+  body.innerHTML = shaped.html;
+  showBlockState(shaped.regions);
   state.matches = [...reader.querySelectorAll('.doc mark')];
   $('matchNav').hidden = state.matches.length === 0;
   if (state.matches.length) {
@@ -274,6 +282,16 @@ function redrawDoc() {
   }
   reader.scrollTop = top;
   if (state.listMode === 'browse' || state.listMode === 'search') renderList();
+}
+
+/* The Blocks button only means anything on a sample that has markup in it. */
+function showBlockState(regions) {
+  const b = $('btnBlocks');
+  b.disabled = !regions;
+  b.classList.toggle('active', !!regions && prefs.blocks);
+  b.title = !regions ? 'No collapsed markup in this sample'
+    : prefs.blocks ? 'Showing markup as indented blocks (f)'
+    : 'Lay collapsed markup out as indented blocks (f)';
 }
 
 function gotoMatch(i) {
@@ -423,6 +441,7 @@ function bind() {
     } catch { $('btnCopy').textContent = 'Blocked'; }
     setTimeout(() => ($('btnCopy').textContent = 'Copy'), 1200);
   };
+  $('btnBlocks').onclick = toggleBlocks;
   $('btnRandom').onclick = randomDoc;
   $('btnBookmarks').onclick = () => toggleListMode('bookmarks');
   $('btnNotes').onclick = () => toggleListMode('notes');
@@ -489,6 +508,13 @@ function bind() {
   document.addEventListener('keydown', onKey);
   window.addEventListener('hashchange', routeFromHash);
   Anno.init();
+  Markup.init();
+}
+
+function toggleBlocks() {
+  prefs.blocks = !prefs.blocks;
+  saveJSON('gpt2x.prefs', prefs);
+  redrawDoc();
 }
 
 function cycleTheme() {
@@ -526,6 +552,7 @@ function onKey(e) {
     case 's': toggleBookmark(); break;
     case 'b': $('btnBookmarks').click(); break;
     case 'a': $('btnNotes').click(); break;
+    case 'f': toggleBlocks(); break;
     case 'h': if (Anno.applyToSelection('highlight')) e.preventDefault(); break;
     case 'u': if (Anno.applyToSelection('underline')) e.preventDefault(); break;
     case 'x': if (Anno.applyToSelection('strike')) e.preventDefault(); break;

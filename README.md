@@ -54,6 +54,29 @@ width, tracking and theme (dark / sepia / light) adjustable from the `Aa` menu
 and remembered across sessions. Dark is the default. Bookmark samples with `s`,
 review them with `b`. Every sample has a stable URL (`#doc/12345`).
 
+**Markup blocks** — the scrape that produced this corpus flattened whitespace, so
+an HTML page a model wrote across sixty indented lines arrives as one
+2,600-character line with single spaces between the tags: unreadable as prose and
+unreadable as source. The reader finds the stretches of a sample that are dense in
+tags, parses them, and lays each tag, comment and text run on its own line
+indented to its nesting depth, with the tag names, attributes and values tinted.
+`Blocks` in the reader bar (or `f`) turns it off and on.
+
+Every line break and every indent there is CSS — `display:block` and
+`padding-left` — never inserted text. Not one character of the sample is added,
+removed or moved, so the offsets annotations are anchored to stay exactly valid:
+a highlight made on the re-broken markup covers the same characters with blocks
+switched off, and copying the sample still yields the original.
+
+**Preview** — each markup block also has a `Preview` tab that renders it as a
+page, so you can look at the thing the model was describing rather than at its
+source. It is a hostile-content sandbox, because none of this markup is
+trustworthy: `sandbox=""` (no scripts, no forms, no navigation, no popups, and an
+opaque origin, so the frame cannot reach this page or its storage) plus a CSP of
+`default-src 'none'` (so nothing in a sample can make the viewer fetch a URL a
+language model invented). Inline styles are the one thing let through. A sample
+that links Bootstrap from a CDN therefore renders unstyled — deliberately.
+
 **Annotate** — select any passage in the reader to highlight, underline or
 strike it in one of five colours, and attach a note to it. Marks are anchored to
 character offsets in the sample, so they are re-applied every time you open it
@@ -88,6 +111,7 @@ across all nine datasets. Keywords are clickable and search the corpus for you.
 | `h` / `u` / `x` | highlight / underline / strike the selection |
 | `m` | attach a note to the selection |
 | `a` | show notes & highlights |
+| `f` | lay collapsed markup out as blocks |
 | `g` | go to a sample index |
 | `t` | cycle theme |
 | `-` / `=` | text smaller / larger |
@@ -102,7 +126,7 @@ across all nine datasets. Keywords are clickable and search the corpus for you.
 | `viewer/fetch_data.py` | downloads `.jsonl` files from the OpenAI Azure bucket into `data/` |
 | `viewer/build_index.py` | builds `data/index.db`: documents, FTS5 index, per-dataset stats, term counts |
 | `viewer/app.py` | `http.server` JSON API + static file server |
-| `viewer/static/` | the UI (`index.html`, `app.js`, `annotate.js`, `analytics.js`, `style.css`) |
+| `viewer/static/` | the UI (`index.html`, `app.js`, `annotate.js`, `markup.js`, `analytics.js`, `style.css`) |
 | `viewer/README.md` | fuller notes on the viewer, including how the analytics are computed |
 | `data/` | downloaded samples and the index — **gitignored**, created on first run |
 | `download_dataset.py` | the original OpenAI download script (needs `requests`, `tqdm`) |

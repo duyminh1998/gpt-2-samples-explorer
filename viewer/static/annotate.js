@@ -87,39 +87,49 @@ const Anno = (() => {
     return out;
   }
 
-  /* Body HTML for a sample: search hits as <mark>, annotations as <span>.
-     The text is cut at every range boundary so the two never have to nest
-     badly - each slice knows exactly which marks and annotations cover it. */
-  function body(doc, terms) {
+  /* A renderer for one sample. The text is cut at every range boundary - search
+     hits, annotations, and whatever decorations the formatter passes in - so
+     none of them ever have to nest badly: each slice knows exactly what covers
+     it. What comes back is a function that renders any character range, which
+     is what lets a formatting mode lay the same character stream out as blocks
+     without moving a single offset. */
+  function slicer(doc, terms, extra) {
     cur = doc;
     const text = doc.text;
     const anns = resolve(text, listFor(doc.id));
     const hits = termRanges(text, terms);
+    const deco = extra || [];
     updateCounts();
 
-    const cuts = new Set([0, text.length]);
+    const cuts = new Set();
     for (const a of anns) { cuts.add(a.start); cuts.add(a.end); }
     for (const h of hits) { cuts.add(h.s); cuts.add(h.e); }
-    const points = [...cuts].filter((p) => p >= 0 && p <= text.length).sort((a, b) => a - b);
+    for (const d of deco) { cuts.add(d.s); cuts.add(d.e); }
+    const points = [...cuts].filter((p) => p > 0 && p < text.length).sort((a, b) => a - b);
 
-    let html = '';
-    for (let i = 0; i < points.length - 1; i++) {
-      const s = points[i], e = points[i + 1];
-      if (s >= e) continue;
-      let seg = esc(text.slice(s, e));
-      if (hits.some((h) => h.s <= s && h.e >= e)) seg = `<mark>${seg}</mark>`;
-      const act = anns.filter((a) => a.start <= s && a.end >= e);
-      if (act.length) {
-        const top = act[act.length - 1];
-        const cls = [...new Set(act.map((a) => 'an-' + a.style))].join(' ');
-        const noted = act.some((a) => a.end === e && a.note);
-        seg = `<span class="anno ${cls}" data-an="${act.map((a) => a.id).join(' ')}"`
-            + ` style="--an-color:var(--hl-${top.color})"${noted ? ' data-note="1"' : ''}`
-            + `>${seg}</span>`;
+    return function slice(from, to) {
+      const pts = [from, ...points.filter((p) => p > from && p < to), to];
+      let html = '';
+      for (let i = 0; i < pts.length - 1; i++) {
+        const s = pts[i], e = pts[i + 1];
+        if (s >= e) continue;
+        let seg = esc(text.slice(s, e));
+        const d = deco.find((x) => x.s <= s && x.e >= e);
+        if (d) seg = `<span class="${d.cls}">${seg}</span>`;
+        if (hits.some((h) => h.s <= s && h.e >= e)) seg = `<mark>${seg}</mark>`;
+        const act = anns.filter((a) => a.start <= s && a.end >= e);
+        if (act.length) {
+          const top = act[act.length - 1];
+          const cls = [...new Set(act.map((a) => 'an-' + a.style))].join(' ');
+          const noted = act.some((a) => a.end === e && a.note);
+          seg = `<span class="anno ${cls}" data-an="${act.map((a) => a.id).join(' ')}"`
+              + ` style="--an-color:var(--hl-${top.color})"${noted ? ' data-note="1"' : ''}`
+              + `>${seg}</span>`;
+        }
+        html += seg;
       }
-      html += seg;
-    }
-    return html;
+      return html;
+    };
   }
 
   function updateCounts() {
@@ -442,7 +452,7 @@ const Anno = (() => {
   }
 
   return {
-    init, body, listHtml, focus, clear, total, countFor, updateCounts,
+    init, slicer, listHtml, focus, clear, total, countFor, updateCounts,
     hidePanels() { hideBar(); closeEditor(); },
     applyToSelection(style) {
       const r = readSelection();

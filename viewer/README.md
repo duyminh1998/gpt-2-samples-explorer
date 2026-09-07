@@ -18,6 +18,15 @@ Serif by default at a comfortable measure, with size, line-height, width, letter
 spacing, typeface and theme (dark / sepia / light) all adjustable from the `Aa`
 menu and remembered across sessions. Bookmark samples with `s`, browse them with `b`.
 
+**Markup blocks** — samples where the scrape collapsed an HTML page onto one long
+line are re-broken into indented blocks, one tag per line, with tag names,
+attributes and values tinted. `Blocks` in the reader bar (or `f`) toggles it. The
+line breaks and indentation are CSS only — no character of the sample is added,
+removed or moved — so annotations and search hits land on the same text either
+way. Each block also has a `Preview` tab that renders the markup as a page inside
+a hard sandbox: `sandbox=""` and a CSP of `default-src 'none'`, so no script runs
+and nothing is fetched from the network.
+
 **Annotate** — select any passage to highlight, underline or strike it in one of
 five colours, and attach a note to it. Marks are anchored to character offsets in
 the sample, so they come back every time you open it again. `✎` opens the notes
@@ -49,6 +58,7 @@ across all nine datasets.
 | `h` / `u` / `x` | highlight / underline / strike the selection |
 | `m` | attach a note to the selection |
 | `a` | show notes & highlights |
+| `f` | lay collapsed markup out as blocks |
 | `g` | go to a sample index |
 | `t` | cycle theme |
 | `-` / `=` | text smaller / larger |
@@ -63,7 +73,7 @@ across all nine datasets.
 | `fetch_data.py` | downloads `.jsonl` files from the OpenAI Azure bucket into `data/` |
 | `build_index.py` | builds `data/index.db`: documents, FTS5 index, per-dataset stats and term counts |
 | `app.py` | `http.server` JSON API + static files |
-| `static/` | the UI (`index.html`, `app.js`, `annotate.js`, `analytics.js`, `style.css`) |
+| `static/` | the UI (`index.html`, `app.js`, `annotate.js`, `markup.js`, `analytics.js`, `style.css`) |
 
 Each is runnable on its own:
 

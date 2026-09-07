@@ -20,6 +20,10 @@
 
   --reader-bg: #16161a;
   --reader-fg: #e4e4ea;
+  --tok-cmt: #6f7f6a;
+  --tok-str: #b08a4a;
+  --tok-kw:  #7f8ed4;
+  --tok-num: #4e9c86;
 
   /* annotation colours; --an-mix is how much of one shows through as a fill */
   --hl-yellow: #e2ba3c;
@@ -58,6 +62,10 @@
   --grid: #e2e1dc;
   --reader-bg: #fcfcfb;
   --reader-fg: #1b1b20;
+  --tok-cmt: #5e7a58;
+  --tok-str: #9a5f18;
+  --tok-kw:  #4b56b0;
+  --tok-num: #16775f;
   --hl-yellow: #f5cd4b;
   --hl-green:  #57d295;
   --hl-blue:   #6db4f2;
@@ -86,6 +94,10 @@
   --grid: #d8c9a9;
   --reader-bg: #f5ecd8;
   --reader-fg: #3b3225;
+  --tok-cmt: #5f7a55;
+  --tok-str: #91591a;
+  --tok-kw:  #4a54a4;
+  --tok-num: #1a6f5c;
   --hl-yellow: #edc247;
   --hl-green:  #6cc796;
   --hl-blue:   #7cb0e2;
@@ -435,6 +447,67 @@ details.tableview summary:hover { color: var(--text-primary); }
   white-space: pre-wrap;
 }
 .item-head .an-dot { color: var(--hl-yellow); }
+
+
+/* --------------------------------------------------------- markup blocks */
+/* The line breaks and the indentation here are CSS only - no character of the
+   sample is added, removed or moved, so annotation offsets stay valid whether
+   blocks are on or off. */
+
+.mk {
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  line-height: 1.5;
+  letter-spacing: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  padding: 9px 10px 9px 0;
+  margin: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+.mk-line {
+  display: block;
+  white-space: pre-wrap;
+  /* depth indent, plus a hanging indent so a wrapped tag's attributes sit in
+     from its own name rather than lining up with it */
+  padding-left: calc(10px + var(--d) * 1.4em + 1.2em);
+  text-indent: -1.2em;
+}
+.mk-line:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+
+.mk-bar {
+  display: flex; align-items: center; gap: 6px;
+  margin: -9px 0 8px -0px; padding: 6px 8px 6px 10px;
+  border-bottom: 1px solid var(--border-soft);
+  font-family: var(--font-ui); font-size: 11px; color: var(--text-muted);
+}
+.mk-bar .spacer { flex: 1; }
+.mk-kind { text-transform: uppercase; letter-spacing: .07em; }
+.mk-tab {
+  background: none; border: 1px solid transparent; color: var(--text-secondary);
+  border-radius: 5px; padding: 2px 9px; cursor: pointer; font-size: 11.5px;
+}
+.mk-tab:hover { background: var(--surface-3); color: var(--text-primary); }
+.mk-tab[aria-pressed="true"] { background: var(--surface-3); border-color: var(--border); color: var(--text-primary); }
+
+.mk-frame {
+  display: block; width: 100%; height: 460px; border: 0; border-radius: 4px;
+  background: #fff; resize: vertical; overflow: auto;
+}
+.mk-frame[hidden], .mk-body[hidden] { display: none; }
+
+.mk-name { color: var(--tok-kw); }
+.mk-attr { color: var(--tok-num); }
+.mk-val  { color: var(--tok-str); }
+.mk-cmt  { color: var(--tok-cmt); font-style: italic; }
+.mk-decl { color: var(--text-muted); }
+.mk-line.mk-text { color: var(--reader-fg); }
+
+.badge.mk-badge { cursor: help; background: var(--surface-3); color: var(--text-secondary); }
+.icon-btn:disabled { opacity: .4; cursor: default; }
+.icon-btn:disabled:hover { background: var(--surface-2); color: var(--text-secondary); }
 
 @media (max-width: 860px) {
   .sidebar { position: absolute; inset: 48px auto 0 0; height: calc(100% - 48px); z-index: 30; box-shadow: 0 0 40px rgba(0,0,0,.5); }
