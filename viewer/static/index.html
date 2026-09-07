@@ -19,6 +19,7 @@
     <div class="spacer"></div>
     <button class="icon-btn" id="btnRandom" title="Jump to a random sample (r)">Random</button>
     <button class="icon-btn" id="btnBookmarks" title="Show bookmarked samples (b)">★ <span id="bmCount">0</span></button>
+    <button class="icon-btn" id="btnNotes" title="Saved notes &amp; highlights (a)">✎ <span id="anCount">0</span></button>
     <button class="icon-btn" id="btnTheme" title="Cycle theme (t)">Dark</button>
     <button class="icon-btn" id="btnSettings" title="Reading settings">Aa</button>
     <button class="icon-btn" id="btnHelp" title="Keyboard shortcuts (?)">?</button>
@@ -47,6 +48,14 @@
           </select>
         </div>
       </div>
+      <div class="notes-head" id="notesHead" hidden>
+        <div class="seg" id="notesScope">
+          <button data-v="all" aria-pressed="true">All samples</button>
+          <button data-v="doc" aria-pressed="false">This sample</button>
+        </div>
+        <div class="spacer"></div>
+        <button class="icon-btn danger" id="btnClearNotes" title="Delete the marks listed below">Clear…</button>
+      </div>
       <div class="side-status" id="sideStatus"><span>Loading…</span></div>
       <div class="list" id="list"></div>
       <div class="pager" id="pager" hidden>
@@ -71,6 +80,7 @@
           <span id="matchInfo" style="margin:0 6px"></span>
           <button class="icon-btn" id="nextMatch" title="Next match (n)">↓</button>
         </span>
+        <button class="icon-btn" id="btnDocNotes" title="Notes &amp; highlights on this sample">✎ <span id="docAnCount">0</span></button>
         <button class="icon-btn" id="btnStar" title="Bookmark this sample (s)">☆ Save</button>
         <button class="icon-btn" id="btnCopy" title="Copy the sample text">Copy</button>
       </div>
@@ -82,6 +92,35 @@
     <section class="analytics-wrap" id="analyticsWrap">
       <div class="loading">Loading analytics…</div>
     </section>
+  </div>
+</div>
+
+<div class="anno-bar" id="annoBar" hidden>
+  <div class="swatches" id="annoColors"></div>
+  <span class="ab-sep"></span>
+  <button class="ab" data-style="highlight" title="Highlight (h)"><span class="ab-hl">A</span></button>
+  <button class="ab" data-style="underline" title="Underline (u)"><span class="ab-ul">A</span></button>
+  <button class="ab" data-style="strike" title="Strike through (x)"><span class="ab-st">A</span></button>
+  <span class="ab-sep"></span>
+  <button class="ab" id="annoNote" title="Highlight and attach a note (m)">✎ Note</button>
+  <button class="ab" id="annoClearSel" title="Remove marks under the selection">✕</button>
+</div>
+
+<div class="anno-pop" id="annoPop" hidden>
+  <div class="ap-quote" id="apQuote"></div>
+  <div class="ap-row"><span>Colour</span><div class="swatches" id="apColors"></div></div>
+  <div class="ap-row"><span>Style</span>
+    <div class="seg" id="apStyle">
+      <button data-v="highlight">Highlight</button>
+      <button data-v="underline">Underline</button>
+      <button data-v="strike">Strike</button>
+    </div>
+  </div>
+  <textarea id="apNote" rows="4" placeholder="Write a note…" spellcheck="false"></textarea>
+  <div class="ap-foot">
+    <button class="icon-btn danger" id="apDelete">Delete</button>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="apDone">Done</button>
   </div>
 </div>
 
@@ -117,6 +156,9 @@
     <tr><td><kbd>r</kbd></td><td>random sample</td></tr>
     <tr><td><kbd>s</kbd></td><td>bookmark this sample</td></tr>
     <tr><td><kbd>b</kbd></td><td>show bookmarks</td></tr>
+    <tr><td><kbd>h</kbd> / <kbd>u</kbd> / <kbd>x</kbd></td><td>highlight / underline / strike the selection</td></tr>
+    <tr><td><kbd>m</kbd></td><td>attach a note to the selection</td></tr>
+    <tr><td><kbd>a</kbd></td><td>show notes &amp; highlights</td></tr>
     <tr><td><kbd>t</kbd></td><td>cycle theme</td></tr>
     <tr><td><kbd>-</kbd> / <kbd>=</kbd></td><td>text smaller / larger</td></tr>
     <tr><td><kbd>\</kbd></td><td>toggle the list pane</td></tr>
@@ -128,6 +170,7 @@
 <div class="tooltip" id="tooltip" hidden></div>
 
 <script src="analytics.js?v={{V}}"></script>
+<script src="annotate.js?v={{V}}"></script>
 <script src="app.js?v={{V}}"></script>
 </body>
 </html>

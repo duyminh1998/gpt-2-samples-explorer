@@ -16,7 +16,9 @@ const state = {
   sort: 'index',
   offset: 0,
   limit: 40,
-  listMode: 'browse',      // browse | search | bookmarks
+  listMode: 'browse',      // browse | search | bookmarks | notes
+  savedQuery: '',          // the search put aside while the notes panel is up
+  notesScope: 'all',       // all | doc
   items: [],
   total: 0,
   docId: null,
@@ -121,6 +123,7 @@ function renderList() {
         <span>#${fmt(it.doc_index)}</span>
         <span>${fmt(it.n_tokens)} tok</span>
         ${ds ? `<span>${esc(ds.split)}</span>` : ''}
+        ${Anno.countFor(it.id) ? `<span class="an-dot" title="${Anno.countFor(it.id)} mark(s)">✎</span>` : ''}
       </div>
       <div class="item-snip">${snip}</div>
     </div>`;
@@ -142,6 +145,20 @@ function renderPager() {
 async function loadList(resetOffset) {
   if (resetOffset) state.offset = 0;
   const dsParam = state.dataset === 'all' ? undefined : state.dataset;
+  $('notesHead').hidden = state.listMode !== 'notes';
+  if (state.listMode === 'notes') {
+    // annotations live in localStorage, so this list needs no round trip; the
+    // search box filters it instead of querying the corpus
+    const scope = state.notesScope === 'doc' ? state.docId : null;
+    state.items = [];
+    state.total = 0;
+    $('list').innerHTML = Anno.listHtml(state.query, scope);
+    const n = scope === null ? Anno.total() : Anno.countFor(scope);
+    renderStatus(`<b>${fmt(n)}</b> mark${n === 1 ? '' : 's'}`,
+      scope === null ? 'all samples' : 'this sample');
+    renderPager();
+    return;
+  }
   try {
     if (state.listMode === 'bookmarks') {
       renderStatus('Bookmarks');
@@ -197,15 +214,6 @@ function queryTerms() {
     .filter((t) => t.length > 1);
 }
 
-function highlight(text, terms) {
-  const html = esc(text);
-  if (!terms.length) return html;
-  const rx = new RegExp('(' + terms.map((t) =>
-    t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+') + '\\w*'
-  ).join('|') + ')', 'gi');
-  return html.replace(rx, '<mark>$1</mark>');
-}
-
 function renderDoc() {
   const d = state.doc;
   const reader = $('reader');
@@ -230,7 +238,7 @@ function renderDoc() {
       </div>
       <hr>
     </div>
-    <article class="doc" id="docBody">${highlight(d.text, queryTerms())}</article>`;
+    <article class="doc" id="docBody">${Anno.body(d, queryTerms())}</article>`;
 
   state.matches = [...reader.querySelectorAll('.doc mark')];
   state.matchIdx = -1;
@@ -242,6 +250,30 @@ function renderDoc() {
   $('btnPrevDoc').disabled = !d.prev_id;
   $('btnNextDoc').disabled = !d.next_id;
   saveJSON('gpt2x.last', d.id);
+}
+
+/* Re-paint the sample after a mark was added, edited or removed, without
+   losing the reading position or the current search match. */
+function redrawDoc() {
+  if (!state.doc) return;
+  const body = $('docBody');
+  if (!body) return renderDoc();
+  const reader = $('reader');
+  const top = reader.scrollTop;
+  const at = state.matchIdx;
+  body.innerHTML = Anno.body(state.doc, queryTerms());
+  state.matches = [...reader.querySelectorAll('.doc mark')];
+  $('matchNav').hidden = state.matches.length === 0;
+  if (state.matches.length) {
+    const i = Math.max(0, Math.min(at, state.matches.length - 1));
+    state.matchIdx = i;
+    state.matches[i].classList.add('current');
+    $('matchInfo').textContent = `${i + 1}/${state.matches.length}`;
+  } else {
+    state.matchIdx = -1;
+  }
+  reader.scrollTop = top;
+  if (state.listMode === 'browse' || state.listMode === 'search') renderList();
 }
 
 function gotoMatch(i) {
@@ -307,6 +339,34 @@ function setView(v) {
   }
 }
 
+/* Switch the sidebar between browsing, bookmarks and notes. Clicking the mode
+   you are already in drops back to the search or browse list underneath. */
+function toggleListMode(mode) {
+  let next = state.listMode === mode ? null : mode;
+  if (state.listMode === 'notes' && next !== 'notes') {
+    $('q').value = state.savedQuery || '';
+    $('q').placeholder = 'Search all samples…  (press /)';
+  } else if (next === 'notes') {
+    state.savedQuery = $('q').value;
+    $('q').value = '';
+    $('q').placeholder = 'Filter notes…';
+  }
+  state.query = $('q').value.trim();
+  if (next === null) next = state.query ? 'search' : 'browse';
+  state.listMode = next;
+  $('btnBookmarks').classList.toggle('active', next === 'bookmarks');
+  $('btnNotes').classList.toggle('active', next === 'notes');
+  setView('read');
+  loadList(true);
+}
+
+function setNotesScope(scope) {
+  state.notesScope = scope;
+  for (const b of $('notesScope').children) {
+    b.setAttribute('aria-pressed', String(b.dataset.v === scope));
+  }
+}
+
 function toggleBookmark() {
   if (!state.doc) return;
   const i = bookmarks.indexOf(state.doc.id);
@@ -321,6 +381,7 @@ function toggleBookmark() {
 async function doSearch(autoOpen) {
   const q = $('q').value.trim();
   state.query = q;
+  if (state.listMode === 'notes') return loadList(true);
   if (state.listMode !== 'bookmarks') state.listMode = q ? 'search' : 'browse';
   await loadList(true);
   // an explicit search (Enter / Go / a keyword chip) drops you straight into
@@ -363,11 +424,25 @@ function bind() {
     setTimeout(() => ($('btnCopy').textContent = 'Copy'), 1200);
   };
   $('btnRandom').onclick = randomDoc;
-  $('btnBookmarks').onclick = () => {
-    state.listMode = state.listMode === 'bookmarks' ? (state.query ? 'search' : 'browse') : 'bookmarks';
-    $('btnBookmarks').classList.toggle('active', state.listMode === 'bookmarks');
-    setView('read');
+  $('btnBookmarks').onclick = () => toggleListMode('bookmarks');
+  $('btnNotes').onclick = () => toggleListMode('notes');
+  $('btnDocNotes').onclick = () => {
+    setNotesScope('doc');
+    if (state.listMode === 'notes') loadList(true);
+    else toggleListMode('notes');
+  };
+  $('notesScope').onclick = (e) => {
+    if (!e.target.dataset.v) return;
+    setNotesScope(e.target.dataset.v);
     loadList(true);
+  };
+  $('btnClearNotes').onclick = () => {
+    const scope = state.notesScope === 'doc' ? state.docId : null;
+    const n = scope === null ? Anno.total() : Anno.countFor(scope);
+    if (!n) return;
+    const what = n === 1 ? 'this mark' : `all ${fmt(n)} marks`;
+    const where = scope === null ? 'every sample' : 'this sample';
+    if (confirm(`Delete ${what} on ${where}? This cannot be undone.`)) Anno.clear(scope);
   };
   $('btnToggleSidebar').onclick = () => $('sidebar').classList.toggle('collapsed');
   $('btnTheme').onclick = cycleTheme;
@@ -413,6 +488,7 @@ function bind() {
 
   document.addEventListener('keydown', onKey);
   window.addEventListener('hashchange', routeFromHash);
+  Anno.init();
 }
 
 function cycleTheme() {
@@ -434,7 +510,11 @@ async function randomDoc() {
 
 function onKey(e) {
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
-  if (e.key === 'Escape') { $('settingsPanel').hidden = true; $('helpPanel').hidden = true; }
+  if (e.key === 'Escape') {
+    $('settingsPanel').hidden = true;
+    $('helpPanel').hidden = true;
+    Anno.hidePanels();
+  }
   if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
   switch (e.key) {
     case '/': e.preventDefault(); $('q').focus(); $('q').select(); break;
@@ -445,6 +525,11 @@ function onKey(e) {
     case 'r': randomDoc(); break;
     case 's': toggleBookmark(); break;
     case 'b': $('btnBookmarks').click(); break;
+    case 'a': $('btnNotes').click(); break;
+    case 'h': if (Anno.applyToSelection('highlight')) e.preventDefault(); break;
+    case 'u': if (Anno.applyToSelection('underline')) e.preventDefault(); break;
+    case 'x': if (Anno.applyToSelection('strike')) e.preventDefault(); break;
+    case 'm': if (Anno.noteSelection()) e.preventDefault(); break;
     case 't': cycleTheme(); break;
     case '\\': $('sidebar').classList.toggle('collapsed'); break;
     case '?': $('btnHelp').click(); break;
@@ -483,6 +568,8 @@ window.explorer = {
     setView('read');
     doSearch(true);
   },
+  openDoc, redrawDoc,
+  refreshNotes() { if (state.listMode === 'notes') loadList(false); },
   api, esc, fmt, bytes, kindOf,
 };
 

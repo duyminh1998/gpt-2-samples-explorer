@@ -54,6 +54,16 @@ width, tracking and theme (dark / sepia / light) adjustable from the `Aa` menu
 and remembered across sessions. Dark is the default. Bookmark samples with `s`,
 review them with `b`. Every sample has a stable URL (`#doc/12345`).
 
+**Annotate** — select any passage in the reader to highlight, underline or
+strike it in one of five colours, and attach a note to it. Marks are anchored to
+character offsets in the sample, so they are re-applied every time you open it
+again — from the list, from a search, from a bookmark. The `✎` button opens the
+notes panel: every mark you have made, newest first, filterable from the search
+box, scoped to all samples or just the one you are reading, and clickable to jump
+back to the passage. Delete one mark from that list or from its editor, or use
+*Clear…* to wipe the marks on the current sample or every mark at once.
+Annotations and bookmarks live in your browser's local storage, not in the index.
+
 **Search** — full-text search across every sample, backed by SQLite FTS5. Four
 query modes: *all words*, *any word*, *exact phrase*, and raw FTS5 syntax (for
 `NEAR()`, `OR`, prefix matching, and the rest). Hits are highlighted in the
@@ -75,6 +85,9 @@ across all nine datasets. Keywords are clickable and search the corpus for you.
 | `/` | focus search |
 | `r` | random sample |
 | `s` / `b` | bookmark / show bookmarks |
+| `h` / `u` / `x` | highlight / underline / strike the selection |
+| `m` | attach a note to the selection |
+| `a` | show notes & highlights |
 | `g` | go to a sample index |
 | `t` | cycle theme |
 | `-` / `=` | text smaller / larger |
@@ -89,7 +102,7 @@ across all nine datasets. Keywords are clickable and search the corpus for you.
 | `viewer/fetch_data.py` | downloads `.jsonl` files from the OpenAI Azure bucket into `data/` |
 | `viewer/build_index.py` | builds `data/index.db`: documents, FTS5 index, per-dataset stats, term counts |
 | `viewer/app.py` | `http.server` JSON API + static file server |
-| `viewer/static/` | the UI (`index.html`, `app.js`, `analytics.js`, `style.css`) |
+| `viewer/static/` | the UI (`index.html`, `app.js`, `annotate.js`, `analytics.js`, `style.css`) |
 | `viewer/README.md` | fuller notes on the viewer, including how the analytics are computed |
 | `data/` | downloaded samples and the index — **gitignored**, created on first run |
 | `download_dataset.py` | the original OpenAI download script (needs `requests`, `tqdm`) |

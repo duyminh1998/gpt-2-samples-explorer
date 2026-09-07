@@ -18,6 +18,14 @@ Serif by default at a comfortable measure, with size, line-height, width, letter
 spacing, typeface and theme (dark / sepia / light) all adjustable from the `Aa`
 menu and remembered across sessions. Bookmark samples with `s`, browse them with `b`.
 
+**Annotate** — select any passage to highlight, underline or strike it in one of
+five colours, and attach a note to it. Marks are anchored to character offsets in
+the sample, so they come back every time you open it again. `✎` opens the notes
+panel: every mark, newest first, filterable, scoped to all samples or just the one
+you are reading, click to jump back to it. Delete one from that list or from its
+editor, or use *Clear…* for the current sample or the whole lot. Stored in
+localStorage, like bookmarks.
+
 **Search** — full-text search across every sample, backed by SQLite FTS5. Four
 query modes: *all words*, *any word*, *exact phrase*, and raw FTS5 syntax (for
 `NEAR()`, `OR`, prefixes, and the rest). Hits are highlighted in the result
@@ -38,6 +46,9 @@ across all nine datasets.
 | `/` | focus search |
 | `r` | random sample |
 | `s` / `b` | bookmark / show bookmarks |
+| `h` / `u` / `x` | highlight / underline / strike the selection |
+| `m` | attach a note to the selection |
+| `a` | show notes & highlights |
 | `g` | go to a sample index |
 | `t` | cycle theme |
 | `-` / `=` | text smaller / larger |
@@ -52,7 +63,7 @@ across all nine datasets.
 | `fetch_data.py` | downloads `.jsonl` files from the OpenAI Azure bucket into `data/` |
 | `build_index.py` | builds `data/index.db`: documents, FTS5 index, per-dataset stats and term counts |
 | `app.py` | `http.server` JSON API + static files |
-| `static/` | the UI (`index.html`, `app.js`, `analytics.js`, `style.css`) |
+| `static/` | the UI (`index.html`, `app.js`, `annotate.js`, `analytics.js`, `style.css`) |
 
 Each is runnable on its own:
 
